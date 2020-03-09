@@ -38,7 +38,7 @@ class KylinOperator(BaseOperator):
     def __init__(self,
                  is_kylin=True,
                  rest_api_version='v2',
-                 ke_version='3.0',
+                 version='3.0',
                  conn_id='kylin_default',
                  project=None,
                  cube=None,
@@ -84,7 +84,7 @@ class KylinOperator(BaseOperator):
         super(KylinOperator, self).__init__(*args, **kwargs)
         self.is_kylin = is_kylin
         self.rest_api_version = rest_api_version
-        self.ke_version = ke_version
+        self.version = version
         self.conn_id = conn_id
         self.project = project
         self.cube = cube
@@ -131,7 +131,7 @@ class KylinOperator(BaseOperator):
         hook = KylinHook(
             is_kylin=self.is_kylin,
             rest_api_version=self.rest_api_version,
-            ke_version=self.ke_version,
+            version=self.version,
             conn_id=self.conn_id,
             project=self.project,
             cube=self.cube,

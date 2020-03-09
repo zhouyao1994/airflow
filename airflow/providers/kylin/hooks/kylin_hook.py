@@ -129,7 +129,7 @@ class KylinHook(BaseHook):
     def __init__(self,
                  is_kylin=True,
                  rest_api_version='v2',
-                 ke_version='3.0',
+                 version='3.0',
                  conn_id='kylin_default',
                  project=None,
                  cube=None,
@@ -174,7 +174,7 @@ class KylinHook(BaseHook):
                  ):
         self.is_kylin = is_kylin
         self.rest_api_version = rest_api_version.lower()
-        self.ke_version = ke_version
+        self.version = version
         self.conn_id = conn_id
         self.project = project
         self.cube = cube
@@ -487,13 +487,13 @@ class KylinHook(BaseHook):
                         }
 
     def _gen_kyligence_request_v2(self):
-        if self.ke_version[0] == '4':
+        if self.version[0] == '4':
             if self.op_mod == "build" and (self.build_type == "BUILD" or (
                     self.build_type == "REFRESH" and self.start_time)):
                 self._gen_ke4_build_v2()
             elif self.op_mod == "build" and self.segments:
                 self._gen_ke_manage_segments_v2()
-        elif self.ke_version[0] == '3':
+        elif self.version[0] == '3':
             if self.op_mod == "build":
                 if self.build_type == "BUILD":
                     self._gen_ke_build_v2()
