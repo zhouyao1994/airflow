@@ -52,7 +52,7 @@ class KylinHook(BaseHook):
                 BUILD,FRESH,MERGE
         Kyligence:
             build:
-                v2:BUILD,FRESH,MERGE,BUILD_CUSTOMIZED,BUILD_BY_FILES,BATCH_SYNC,REFRESH_LOOKUP
+                v2:BUILD,FRESH,MERGE,BUILD_CUSTOMIZED,BATCH_SYNC,REFRESH_LOOKUP
                 v4:BUILD,FRESH,MERGE
     :type build_type: str
     :param track_job_status: Whether to track job status after submit a build request
@@ -95,12 +95,6 @@ class KylinHook(BaseHook):
     :type mkdir_on_hdfs: bool
     :param table_mapping: import segments
     :type table_mapping: list
-    :param start_offset:build by files,
-    :type start_offset:long
-    :param end_offset:build by files,
-    :type end_offset:long
-    :param files:build by files,
-    :type files: list
     :param point_list: batch build
     :type point_list: list
     :param range_list: batch build
@@ -161,9 +155,6 @@ class KylinHook(BaseHook):
                  hdfs_path=None,
                  mkdir_on_hdfs=None,
                  table_mapping=None,
-                 start_offset=None,
-                 end_offset=None,
-                 files=None,
                  point_list=None,
                  range_list=None,
                  entity=None,
@@ -209,9 +200,6 @@ class KylinHook(BaseHook):
         self.hdfs_path = hdfs_path
         self.mkdir_on_hdfs = mkdir_on_hdfs
         self.table_mapping = table_mapping or {}
-        self.start_offset = start_offset
-        self.end_offset = end_offset
-        self.files = files or []
         self.point_list = point_list
         self.range_list = range_list
         self.entity = entity
@@ -329,28 +317,6 @@ class KylinHook(BaseHook):
                         "Accept - Language": "en",
                         }
 
-    def _gen_ke_merge_consecutive_segs_by_files_v2(self):
-        self.method = "PUT"
-        self.endpoint = "/kylin/api/cubes/{cube_name}/segments/merge_consecutive_segs_by_files".format(cube_name=self.cube)
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
-
-    def _gen_ke_build_by_files_v2(self):
-        self.method = "PUT"
-        self.endpoint = "/kylin/api/cubes/{cube_name}/segments/build_by_files".format(cube_name=self.cube)
-        self.data = {"startOffset": self.start_offset,
-                     "buildType": self.build_type}
-        if self.end_offset:
-            self.data.update({"endOffset": self.end_offset})
-        if self.build_type == "BUILD":
-            self.data.update({"files": self.files})
-
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
 
     def _gen_ke_build_streaming_v2(self):
         self.method = "PUT"
@@ -533,8 +499,6 @@ class KylinHook(BaseHook):
                     self._gen_ke_build_v2()
                 elif self.build_type == "BUILD_CUSTOMIZED":  # "build_customized"
                     self._gen_ke_build_customized_v2()
-                elif self.build_type == "BUILD_BY_FILES":  # "build_by_files"
-                    self._gen_ke_build_by_files_v2()
                 elif self.build_type == "BATCH_SYNC":  # "batch_sync"
                     self._gen_ke_build_batch_sync_v2()
                 elif self.build_type == "REFRESH_LOOKUP":  # "refresh_lookup"
@@ -658,7 +622,7 @@ class KylinHook(BaseHook):
     def run(self):
         if self.is_kylin:
             self._gen_apache_kylin_request()
-        elif not self.is_kylin:
+        elif not self.is_open_source:
             self._gen_kyligence_request()
         self._gen_self_http_hook()
         self.log.info("method : {method}".format(method=self.method))

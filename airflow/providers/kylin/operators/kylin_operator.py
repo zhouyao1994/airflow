@@ -29,7 +29,7 @@ class KylinOperator(BaseOperator):
         'track_job_status', 'start_time', 'end_time', 'source_offset_start', 'source_offset_end',
         'force_merge_empty_segment', 'segment_name', 'job_id', 'sleep_time', 'time_out', 'sql',
         'query_result_xcom_push', 'mpvalues', 'force', 'segments', 'lookup_table', 'segment_id', 'hdfs_path',
-        'mkdir_on_hdfs', 'table_mapping', 'start_offset', 'end_offset', 'files', 'point_list', 'range_list',
+        'mkdir_on_hdfs', 'table_mapping', 'point_list', 'range_list',
         'entity', 'cache_key', 'event', 'model', 'ids', 'purge', 'affected_start', 'affected_end',
         'model_mode', 'endpoint', 'method', 'data', 'headers')
     template_ext = ()
@@ -64,9 +64,6 @@ class KylinOperator(BaseOperator):
                  hdfs_path=None,
                  mkdir_on_hdfs=None,
                  table_mapping=None,
-                 start_offset=None,
-                 end_offset=None,
-                 files=None,
                  point_list=None,
                  range_list=None,
                  entity=None,
@@ -113,9 +110,6 @@ class KylinOperator(BaseOperator):
         self.hdfs_path = hdfs_path
         self.mkdir_on_hdfs = mkdir_on_hdfs
         self.table_mapping = table_mapping
-        self.start_offset = start_offset
-        self.end_offset = end_offset
-        self.files = files
         self.point_list = point_list
         self.range_list = range_list
         self.entity = entity
@@ -163,9 +157,6 @@ class KylinOperator(BaseOperator):
             hdfs_path=self.hdfs_path,
             mkdir_on_hdfs=self.mkdir_on_hdfs,
             table_mapping=self.table_mapping,
-            start_offset=self.start_offset,
-            end_offset=self.end_offset,
-            files=self.files,
             point_list=self.point_list,
             range_list=self.range_list,
             entity=self.entity,
