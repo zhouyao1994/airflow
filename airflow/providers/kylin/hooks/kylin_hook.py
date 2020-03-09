@@ -61,7 +61,7 @@ class KylinHook(BaseHook):
     :type start_time: long
     :param end_time: segment's end-time
     :type end_time: long
-    :param source_offset_start: build start offset (ke streaming build or custome build)
+    :param source_offset_start: build start offset (streaming build or custom build)
     :type source_offset_start: long
     :param source_offset_end: build end offset
     :type source_offset_end: long
@@ -81,7 +81,7 @@ class KylinHook(BaseHook):
     :type query_result_xcom_push: bool
     :param mpvalues:
     :type mpvalues:
-    :param force: ke whether force build
+    :param force: whether force build
     :type force: bool
     :param segments: segments to be operated
     :type  segments: list
@@ -111,11 +111,11 @@ class KylinHook(BaseHook):
     :type  ids: list
     :param purge: whether purge segment
     :type purge: bool
-    :param affected_start: [ke v4 smart mode] refresh segments
+    :param affected_start: [KE v4 smart mode] refresh segments
     :type affected_start: str
     :param affected_end:
     :type affected_end: str
-    :param model_mode: [ke V4] (AI_AUGMENTED_MODE,SMART_MODE)
+    :param model_mode: [KE V4] (AI_AUGMENTED_MODE,SMART_MODE)
     :type model_mode: str
     :param endpoint: http endpoint
     :type endpoint: str
@@ -228,7 +228,7 @@ class KylinHook(BaseHook):
                      "endTime": self.end_time,
                      "buildType": self.build_type,
                      "forceMergeEmptySegment": self.force_merge_empty_segment}
-        self.headers = {"Content-Type": "application/json"}
+        _set_kylin_header(self)
 
     def _gen_build2(self):
         self.method = "PUT"
@@ -236,18 +236,19 @@ class KylinHook(BaseHook):
         self.data = {"sourceOffsetStart": self.source_offset_start,
                      "sourceOffsetEnd": self.source_offset_end,
                      "buildType": self.build_type}
-        self.headers = {"Content-Type": "application/json"}
+        _set_kylin_header(self)
 
     def _gen_delete_segment(self):
         self.method = "DELETE"
         self.endpoint = "/kylin/api/cubes/{cube_name}/segs/{segment_name}".format(cube_name=self.cube,
                                                                                   segment_name=self.segment_name)
+        _set_kylin_header(self)
 
     def _gen_query(self, sql):
         self.method = "PUT"
         self.endpoint = "/kylin/api/query"
         self.data = {"sql": self.sql, "project": self.project}
-        self.headers = {"Content-Type": "application/json"}
+        _set_kylin_header(self)
 
     def _gen_apache_kylin_request(self):
         if self.op_mod == "build":
@@ -267,10 +268,8 @@ class KylinHook(BaseHook):
         if self.mpvalues:
             self.data.update({"mpValues": self.mpvalues})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_manage_segments_v2(self):
         self.method = "PUT"
@@ -281,10 +280,8 @@ class KylinHook(BaseHook):
         if self.mpvalues:
             self.data.update({"mpValues": self.mpvalues})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_manage_segments_export_v2(self):
         self.method = "POST"
@@ -296,10 +293,7 @@ class KylinHook(BaseHook):
         if self.mkdir_on_hdfs:
             self.data.update({"mkdirOnHdfs": self.mkdir_on_hdfs})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
 
     def _gen_ke_manage_segments_import_v2(self):
         self.method = "POST"
@@ -312,10 +306,7 @@ class KylinHook(BaseHook):
         if self.table_mapping:
             self.data.update({"tableMapping": self.table_mapping})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
 
 
     def _gen_ke_build_streaming_v2(self):
@@ -329,10 +320,8 @@ class KylinHook(BaseHook):
         if self.force:
             self.data.update({"force": self.force})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_build_customized_v2(self):
         self.method = "PUT"
@@ -345,10 +334,8 @@ class KylinHook(BaseHook):
         if self.force:
             self.data.update({"force": self.force})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_build_batch_sync_v2(self):
         self.method = "PUT"
@@ -361,20 +348,17 @@ class KylinHook(BaseHook):
         if self.force:
             self.data.update({"force": self.force})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_fresh_lookup_v2(self):
         self.method = "PUT"
         self.endpoint = "/kylin/api/cubes/{cube_name}/refresh_lookup".format(cube_name=self.cube)
         self.data = {"lookupTable": self.lookupTable,
                      "project": self.project}
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_cache_clean_v2(self):
         self.method = "PUT"
@@ -383,10 +367,9 @@ class KylinHook(BaseHook):
             cache_key=self.cache_key,
             event=self.event
         )
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_cache_clean_onenode_v2(self):
         self.method = "PUT"
@@ -395,10 +378,9 @@ class KylinHook(BaseHook):
             cache_key=self.cache_key,
             event=self.event
         )
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+
+        _set_ke_header_v2(self)
+
 
     def _gen_ke4_build_v2(self):
         self.method = "PUT"
@@ -407,10 +389,8 @@ class KylinHook(BaseHook):
                      "endTime": self.end_time,
                      "buildType": self.build_type  # "REFRESH","BUILD"
                      }
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+
+        _set_ke_header_v2(self)
 
     def _gen_ke_build_segment_ai_augmented_mode_v4(self):
         self.method = "POST"
@@ -426,10 +406,8 @@ class KylinHook(BaseHook):
             self.data.update({"ids": self.ids, "type": self.build_type})
             self.method = "PUT"
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v4-public+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v4(self)
+
 
     def _gen_ke_purge_segment_ai_augmented_mode_v4(self):
         self.method = "DELETE"
@@ -439,10 +417,7 @@ class KylinHook(BaseHook):
             ids=self.ids,
             purge=self.purge
         )
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v4-public+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v4(self)
 
     def _gen_ke_build_segment_smart_mode_v4(self):
         self.method = "POST"
@@ -453,10 +428,7 @@ class KylinHook(BaseHook):
                      "start": self.start_time,
                      "end": self.end_time
         }
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v4-public+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v4(self)
 
     # post
     def _gen_ke_fresh_segment_smart_mode_v4(self):
@@ -470,10 +442,7 @@ class KylinHook(BaseHook):
                      "affected_end": self.affected_end
                      }
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v4-public+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v4(self)
 
     def _gen_ke_build_indexes_v4(self):
         self.method = "POST"
@@ -481,10 +450,7 @@ class KylinHook(BaseHook):
             model_name=self.model,
         )
         self.data = {"project": self.project}
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v4-public+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v4(self)
 
     def _gen_kyligence_request_v2(self):
         if self.version[0] == '4':
@@ -612,7 +578,7 @@ class KylinHook(BaseHook):
             jobs_status = self._get_jobs_status(job_ids)
             self.log.info("job status: {jobs_status}".format(jobs_status=jobs_status))
             if time.time() - start_time > max_process_duration:
-                raise AirflowException("kylin job {job_ids}  timeout!!!".format(job_ids=job_ids))
+                raise AirflowException("kylin job {job_ids}  timeout!".format(job_ids=job_ids))
 
         # jobs status; note: if jobs_status list is empty will return True
         if self._is_jobs_wrong(jobs_status):
@@ -637,3 +603,18 @@ class KylinHook(BaseHook):
             self.log.info("---------------jobs  end-----------------")
         if self.op_mod == "query" and self.query_result_xcom_push:
             return response.json()
+
+    def _set_ke_header_v2(self):
+            self.headers = {"Content-Type": "application/json;charset=utf-8",
+                            "Accept": "application/vnd.apache.kylin-v2+json",
+                            "Accept - Language": "en",
+                            }
+
+    def _set_ke_header_v4(self):
+            self.headers = {"Content-Type": "application/json;charset=utf-8",
+                            "Accept": "application/vnd.apache.kylin-v4-public+json",
+                            "Accept - Language": "en",
+                            }
+
+    def _set_kylin_header(self):
+            self.headers = {"Content-Type": "application/json"}
