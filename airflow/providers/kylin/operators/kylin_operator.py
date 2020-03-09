@@ -25,20 +25,20 @@ from airflow.providers.kylin.hooks.kylin_hook import KylinHook
 class KylinOperator(BaseOperator):
     ui_color = '#B03060'
     template_fields = (
-        'is_open_source', 'rest_api_version', 'ke_version', 'conn_id', 'project', 'cube', 'op_mod', 'build_type',
+        'is_kylin', 'rest_api_version', 'ke_version', 'conn_id', 'project', 'cube', 'op_mod', 'build_type',
         'track_job_status', 'start_time', 'end_time', 'source_offset_start', 'source_offset_end',
         'force_merge_empty_segment', 'segment_name', 'job_id', 'sleep_time', 'time_out', 'sql',
         'query_result_xcom_push', 'mpvalues', 'force', 'segments', 'lookup_table', 'segment_id', 'hdfs_path',
-        'mkdir_on_hdfs', 'table_mapping', 'start_offset', 'end_offset', 'files', 'point_list', 'range_list',
+        'mkdir_on_hdfs', 'table_mapping', 'point_list', 'range_list',
         'entity', 'cache_key', 'event', 'model', 'ids', 'purge', 'affected_start', 'affected_end',
         'model_mode', 'endpoint', 'method', 'data', 'headers')
     template_ext = ()
 
     @apply_defaults
     def __init__(self,
-                 is_open_source=True,
+                 is_kylin=True,
                  rest_api_version='v2',
-                 ke_version='3.0',
+                 version='3.0',
                  conn_id='kylin_default',
                  project=None,
                  cube=None,
@@ -64,9 +64,6 @@ class KylinOperator(BaseOperator):
                  hdfs_path=None,
                  mkdir_on_hdfs=None,
                  table_mapping=None,
-                 start_offset=None,
-                 end_offset=None,
-                 files=None,
                  point_list=None,
                  range_list=None,
                  entity=None,
@@ -85,9 +82,9 @@ class KylinOperator(BaseOperator):
                  *args,
                  **kwargs):
         super(KylinOperator, self).__init__(*args, **kwargs)
-        self.is_open_source = is_open_source
+        self.is_kylin = is_kylin
         self.rest_api_version = rest_api_version
-        self.ke_version = ke_version
+        self.version = version
         self.conn_id = conn_id
         self.project = project
         self.cube = cube
@@ -113,9 +110,6 @@ class KylinOperator(BaseOperator):
         self.hdfs_path = hdfs_path
         self.mkdir_on_hdfs = mkdir_on_hdfs
         self.table_mapping = table_mapping
-        self.start_offset = start_offset
-        self.end_offset = end_offset
-        self.files = files
         self.point_list = point_list
         self.range_list = range_list
         self.entity = entity
@@ -135,9 +129,9 @@ class KylinOperator(BaseOperator):
 
     def execute(self, context):
         hook = KylinHook(
-            is_open_source=self.is_open_source,
+            is_kylin=self.is_kylin,
             rest_api_version=self.rest_api_version,
-            ke_version=self.ke_version,
+            version=self.version,
             conn_id=self.conn_id,
             project=self.project,
             cube=self.cube,
@@ -163,9 +157,6 @@ class KylinOperator(BaseOperator):
             hdfs_path=self.hdfs_path,
             mkdir_on_hdfs=self.mkdir_on_hdfs,
             table_mapping=self.table_mapping,
-            start_offset=self.start_offset,
-            end_offset=self.end_offset,
-            files=self.files,
             point_list=self.point_list,
             range_list=self.range_list,
             entity=self.entity,

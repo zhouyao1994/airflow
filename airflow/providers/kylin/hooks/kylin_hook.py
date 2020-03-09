@@ -26,9 +26,9 @@ from airflow.providers.http.hooks.http import HttpHook
 
 class KylinHook(BaseHook):
     """
-    :param is_open_source: True:apache kylin, Flase: Kylin Enterprise
-    :type is_open_source: bool
-    :param version: Kylin Enterprise restful api version (can be v2,v4)
+    :param is_kylin: True: apache kylin, Flase: kyligence
+    :type is_kylin: bool
+    :param version: restful api version (can be v2, v4)
     :type version:str
     :param conn_id: The connection id as configured in Airflow administration.
     :type conn_id: str
@@ -41,7 +41,7 @@ class KylinHook(BaseHook):
             build: normal build request
             build2: streaming build
             query: query request
-        Kylin enterprise:
+        Kyligence:
             build: normal build request
             build_streaming: streaming build
             query: query request
@@ -50,9 +50,9 @@ class KylinHook(BaseHook):
         Apache Kylin:
             if op_mod is build:
                 BUILD,FRESH,MERGE
-        Kylin enterprise:
+        Kyligence:
             build:
-                v2:BUILD,FRESH,MERGE,BUILD_CUSTOMIZED,BUILD_BY_FILES,BATCH_SYNC,REFRESH_LOOKUP
+                v2:BUILD,FRESH,MERGE,BUILD_CUSTOMIZED,BATCH_SYNC,REFRESH_LOOKUP
                 v4:BUILD,FRESH,MERGE
     :type build_type: str
     :param track_job_status: Whether to track job status after submit a build request
@@ -61,7 +61,7 @@ class KylinHook(BaseHook):
     :type start_time: long
     :param end_time: segment's end-time
     :type end_time: long
-    :param source_offset_start: build start offset (ke streaming build or custome build)
+    :param source_offset_start: build start offset (streaming build or custom build)
     :type source_offset_start: long
     :param source_offset_end: build end offset
     :type source_offset_end: long
@@ -81,7 +81,7 @@ class KylinHook(BaseHook):
     :type query_result_xcom_push: bool
     :param mpvalues:
     :type mpvalues:
-    :param force: ke whether force build
+    :param force: whether force build
     :type force: bool
     :param segments: segments to be operated
     :type  segments: list
@@ -95,12 +95,6 @@ class KylinHook(BaseHook):
     :type mkdir_on_hdfs: bool
     :param table_mapping: import segments
     :type table_mapping: list
-    :param start_offset:build by files,
-    :type start_offset:long
-    :param end_offset:build by files,
-    :type end_offset:long
-    :param files:build by files,
-    :type files: list
     :param point_list: batch build
     :type point_list: list
     :param range_list: batch build
@@ -117,11 +111,11 @@ class KylinHook(BaseHook):
     :type  ids: list
     :param purge: whether purge segment
     :type purge: bool
-    :param affected_start: [ke v4 smart mode] refresh segments
+    :param affected_start: [KE v4 smart mode] refresh segments
     :type affected_start: str
     :param affected_end:
     :type affected_end: str
-    :param model_mode: [ke V4] (AI_AUGMENTED_MODE,SMART_MODE)
+    :param model_mode: [KE V4] (AI_AUGMENTED_MODE,SMART_MODE)
     :type model_mode: str
     :param endpoint: http endpoint
     :type endpoint: str
@@ -133,9 +127,9 @@ class KylinHook(BaseHook):
     :type headers: dict
     """
     def __init__(self,
-                 is_open_source=True,
+                 is_kylin=True,
                  rest_api_version='v2',
-                 ke_version='3.0',
+                 version='3.0',
                  conn_id='kylin_default',
                  project=None,
                  cube=None,
@@ -161,9 +155,6 @@ class KylinHook(BaseHook):
                  hdfs_path=None,
                  mkdir_on_hdfs=None,
                  table_mapping=None,
-                 start_offset=None,
-                 end_offset=None,
-                 files=None,
                  point_list=None,
                  range_list=None,
                  entity=None,
@@ -181,9 +172,9 @@ class KylinHook(BaseHook):
                  headers=None,
                  **args
                  ):
-        self.is_open_source = is_open_source
+        self.is_kylin = is_kylin
         self.rest_api_version = rest_api_version.lower()
-        self.ke_version = ke_version
+        self.version = version
         self.conn_id = conn_id
         self.project = project
         self.cube = cube
@@ -209,9 +200,6 @@ class KylinHook(BaseHook):
         self.hdfs_path = hdfs_path
         self.mkdir_on_hdfs = mkdir_on_hdfs
         self.table_mapping = table_mapping or {}
-        self.start_offset = start_offset
-        self.end_offset = end_offset
-        self.files = files or []
         self.point_list = point_list
         self.range_list = range_list
         self.entity = entity
@@ -240,7 +228,7 @@ class KylinHook(BaseHook):
                      "endTime": self.end_time,
                      "buildType": self.build_type,
                      "forceMergeEmptySegment": self.force_merge_empty_segment}
-        self.headers = {"Content-Type": "application/json"}
+        _set_kylin_header(self)
 
     def _gen_build2(self):
         self.method = "PUT"
@@ -248,18 +236,19 @@ class KylinHook(BaseHook):
         self.data = {"sourceOffsetStart": self.source_offset_start,
                      "sourceOffsetEnd": self.source_offset_end,
                      "buildType": self.build_type}
-        self.headers = {"Content-Type": "application/json"}
+        _set_kylin_header(self)
 
     def _gen_delete_segment(self):
         self.method = "DELETE"
         self.endpoint = "/kylin/api/cubes/{cube_name}/segs/{segment_name}".format(cube_name=self.cube,
                                                                                   segment_name=self.segment_name)
+        _set_kylin_header(self)
 
     def _gen_query(self, sql):
         self.method = "PUT"
         self.endpoint = "/kylin/api/query"
         self.data = {"sql": self.sql, "project": self.project}
-        self.headers = {"Content-Type": "application/json"}
+        _set_kylin_header(self)
 
     def _gen_apache_kylin_request(self):
         if self.op_mod == "build":
@@ -279,10 +268,8 @@ class KylinHook(BaseHook):
         if self.mpvalues:
             self.data.update({"mpValues": self.mpvalues})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_manage_segments_v2(self):
         self.method = "PUT"
@@ -293,10 +280,8 @@ class KylinHook(BaseHook):
         if self.mpvalues:
             self.data.update({"mpValues": self.mpvalues})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_manage_segments_export_v2(self):
         self.method = "POST"
@@ -308,10 +293,7 @@ class KylinHook(BaseHook):
         if self.mkdir_on_hdfs:
             self.data.update({"mkdirOnHdfs": self.mkdir_on_hdfs})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
 
     def _gen_ke_manage_segments_import_v2(self):
         self.method = "POST"
@@ -324,33 +306,8 @@ class KylinHook(BaseHook):
         if self.table_mapping:
             self.data.update({"tableMapping": self.table_mapping})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
 
-    def _gen_ke_merge_consecutive_segs_by_files_v2(self):
-        self.method = "PUT"
-        self.endpoint = "/kylin/api/cubes/{cube_name}/segments/merge_consecutive_segs_by_files".format(cube_name=self.cube)
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
-
-    def _gen_ke_build_by_files_v2(self):
-        self.method = "PUT"
-        self.endpoint = "/kylin/api/cubes/{cube_name}/segments/build_by_files".format(cube_name=self.cube)
-        self.data = {"startOffset": self.start_offset,
-                     "buildType": self.build_type}
-        if self.end_offset:
-            self.data.update({"endOffset": self.end_offset})
-        if self.build_type == "BUILD":
-            self.data.update({"files": self.files})
-
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
 
     def _gen_ke_build_streaming_v2(self):
         self.method = "PUT"
@@ -363,10 +320,8 @@ class KylinHook(BaseHook):
         if self.force:
             self.data.update({"force": self.force})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_build_customized_v2(self):
         self.method = "PUT"
@@ -379,10 +334,8 @@ class KylinHook(BaseHook):
         if self.force:
             self.data.update({"force": self.force})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_build_batch_sync_v2(self):
         self.method = "PUT"
@@ -395,20 +348,17 @@ class KylinHook(BaseHook):
         if self.force:
             self.data.update({"force": self.force})
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_fresh_lookup_v2(self):
         self.method = "PUT"
         self.endpoint = "/kylin/api/cubes/{cube_name}/refresh_lookup".format(cube_name=self.cube)
         self.data = {"lookupTable": self.lookupTable,
                      "project": self.project}
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_cache_clean_v2(self):
         self.method = "PUT"
@@ -417,10 +367,9 @@ class KylinHook(BaseHook):
             cache_key=self.cache_key,
             event=self.event
         )
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+
+        _set_ke_header_v2(self)
+
 
     def _gen_ke_cache_clean_onenode_v2(self):
         self.method = "PUT"
@@ -429,10 +378,9 @@ class KylinHook(BaseHook):
             cache_key=self.cache_key,
             event=self.event
         )
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+
+        _set_ke_header_v2(self)
+
 
     def _gen_ke4_build_v2(self):
         self.method = "PUT"
@@ -441,10 +389,8 @@ class KylinHook(BaseHook):
                      "endTime": self.end_time,
                      "buildType": self.build_type  # "REFRESH","BUILD"
                      }
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v2+json",
-                        "Accept - Language": "en",
-                        }
+
+        _set_ke_header_v2(self)
 
     def _gen_ke_build_segment_ai_augmented_mode_v4(self):
         self.method = "POST"
@@ -460,10 +406,8 @@ class KylinHook(BaseHook):
             self.data.update({"ids": self.ids, "type": self.build_type})
             self.method = "PUT"
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v4-public+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v4(self)
+
 
     def _gen_ke_purge_segment_ai_augmented_mode_v4(self):
         self.method = "DELETE"
@@ -473,10 +417,7 @@ class KylinHook(BaseHook):
             ids=self.ids,
             purge=self.purge
         )
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v4-public+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v4(self)
 
     def _gen_ke_build_segment_smart_mode_v4(self):
         self.method = "POST"
@@ -487,10 +428,7 @@ class KylinHook(BaseHook):
                      "start": self.start_time,
                      "end": self.end_time
         }
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v4-public+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v4(self)
 
     # post
     def _gen_ke_fresh_segment_smart_mode_v4(self):
@@ -504,10 +442,7 @@ class KylinHook(BaseHook):
                      "affected_end": self.affected_end
                      }
 
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v4-public+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v4(self)
 
     def _gen_ke_build_indexes_v4(self):
         self.method = "POST"
@@ -515,26 +450,21 @@ class KylinHook(BaseHook):
             model_name=self.model,
         )
         self.data = {"project": self.project}
-        self.headers = {"Content-Type": "application/json;charset=utf-8",
-                        "Accept": "application/vnd.apache.kylin-v4-public+json",
-                        "Accept - Language": "en",
-                        }
+        _set_ke_header_v4(self)
 
-    def _gen_kylin_enterprise_request_v2(self):
-        if self.ke_version[0] == '4':
+    def _gen_kyligence_request_v2(self):
+        if self.version[0] == '4':
             if self.op_mod == "build" and (self.build_type == "BUILD" or (
                     self.build_type == "REFRESH" and self.start_time)):
                 self._gen_ke4_build_v2()
             elif self.op_mod == "build" and self.segments:
                 self._gen_ke_manage_segments_v2()
-        elif self.ke_version[0] == '3':
+        elif self.version[0] == '3':
             if self.op_mod == "build":
                 if self.build_type == "BUILD":
                     self._gen_ke_build_v2()
                 elif self.build_type == "BUILD_CUSTOMIZED":  # "build_customized"
                     self._gen_ke_build_customized_v2()
-                elif self.build_type == "BUILD_BY_FILES":  # "build_by_files"
-                    self._gen_ke_build_by_files_v2()
                 elif self.build_type == "BATCH_SYNC":  # "batch_sync"
                     self._gen_ke_build_batch_sync_v2()
                 elif self.build_type == "REFRESH_LOOKUP":  # "refresh_lookup"
@@ -542,7 +472,7 @@ class KylinHook(BaseHook):
             elif self.op_mod == "build_streaming":
                 self._gen_ke_build_streaming_v2()
 
-    def _gen_kylin_enterprise_request_v4(self):
+    def _gen_kyligence_request_v4(self):
         if self.model_mode == "SMART_MODE":
             if self.op_mod == "build" and self.build_type == "BUILD" and self.model_mode == "SMART_MODE":
                 self._gen_ke_build_segment_smart_mode_v4()
@@ -556,16 +486,16 @@ class KylinHook(BaseHook):
         if self.op_mod == "build" and self.build_type == "INDEXES":
             self._gen_ke_build_indexes_v4()
 
-    def _gen_kylin_enterprise_request(self):
+    def _gen_kyligence_request(self):
         if self.rest_api_version == "v2":
-            self._gen_kylin_enterprise_request_v2()
+            self._gen_kyligence_request_v2()
         elif self.rest_api_version == "v4":
-            self._gen_kylin_enterprise_request_v4()
+            self._gen_kyligence_request_v4()
 
     def _get_job_ids_from_response(self, rsp_json):
         job_ids = []
         rsp_datas = []
-        if self.is_open_source:
+        if self.is_kylin:
             rsp_datas = [rsp_json]
         else:
             if isinstance(rsp_json["data"], list) and len(rsp_json["data"]) > 0:
@@ -594,7 +524,7 @@ class KylinHook(BaseHook):
     def _get_jobs_status(self, job_ids):
         hook = HttpHook(method="GET", http_conn_id=self.conn_id)
         headers = {"Content-Type": "application/json;charset=utf-8"}
-        if not self.is_open_source:
+        if not self.is_kylin:
             headers.update({"Accept": "application/vnd.apache.kylin-v2+json",
                             "Accept - Language": "en"})
         job_status = []
@@ -648,7 +578,7 @@ class KylinHook(BaseHook):
             jobs_status = self._get_jobs_status(job_ids)
             self.log.info("job status: {jobs_status}".format(jobs_status=jobs_status))
             if time.time() - start_time > max_process_duration:
-                raise AirflowException("kylin job {job_ids}  timeout!!!".format(job_ids=job_ids))
+                raise AirflowException("kylin job {job_ids}  timeout!".format(job_ids=job_ids))
 
         # jobs status; note: if jobs_status list is empty will return True
         if self._is_jobs_wrong(jobs_status):
@@ -656,10 +586,10 @@ class KylinHook(BaseHook):
                 "kylin job {job_ids} status:{job_status}".format(job_ids=job_ids, job_status=jobs_status))
 
     def run(self):
-        if self.is_open_source:
+        if self.is_kylin:
             self._gen_apache_kylin_request()
         elif not self.is_open_source:
-            self._gen_kylin_enterprise_request()
+            self._gen_kyligence_request()
         self._gen_self_http_hook()
         self.log.info("method : {method}".format(method=self.method))
         self.log.info("endpoint : {endpoint}".format(endpoint=self.endpoint))
@@ -673,3 +603,18 @@ class KylinHook(BaseHook):
             self.log.info("---------------jobs  end-----------------")
         if self.op_mod == "query" and self.query_result_xcom_push:
             return response.json()
+
+    def _set_ke_header_v2(self):
+            self.headers = {"Content-Type": "application/json;charset=utf-8",
+                            "Accept": "application/vnd.apache.kylin-v2+json",
+                            "Accept - Language": "en",
+                            }
+
+    def _set_ke_header_v4(self):
+            self.headers = {"Content-Type": "application/json;charset=utf-8",
+                            "Accept": "application/vnd.apache.kylin-v4-public+json",
+                            "Accept - Language": "en",
+                            }
+
+    def _set_kylin_header(self):
+            self.headers = {"Content-Type": "application/json"}
