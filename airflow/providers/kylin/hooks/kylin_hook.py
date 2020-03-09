@@ -26,9 +26,9 @@ from airflow.providers.http.hooks.http import HttpHook
 
 class KylinHook(BaseHook):
     """
-    :param is_open_source: True:apache kylin, Flase: Kylin Enterprise
-    :type is_open_source: bool
-    :param version: Kylin Enterprise restful api version (can be v2,v4)
+    :param is_kylin: True: apache kylin, Flase: kyligence
+    :type is_kylin: bool
+    :param version: restful api version (can be v2, v4)
     :type version:str
     :param conn_id: The connection id as configured in Airflow administration.
     :type conn_id: str
@@ -41,7 +41,7 @@ class KylinHook(BaseHook):
             build: normal build request
             build2: streaming build
             query: query request
-        Kylin enterprise:
+        Kyligence:
             build: normal build request
             build_streaming: streaming build
             query: query request
@@ -50,7 +50,7 @@ class KylinHook(BaseHook):
         Apache Kylin:
             if op_mod is build:
                 BUILD,FRESH,MERGE
-        Kylin enterprise:
+        Kyligence:
             build:
                 v2:BUILD,FRESH,MERGE,BUILD_CUSTOMIZED,BUILD_BY_FILES,BATCH_SYNC,REFRESH_LOOKUP
                 v4:BUILD,FRESH,MERGE
@@ -133,7 +133,7 @@ class KylinHook(BaseHook):
     :type headers: dict
     """
     def __init__(self,
-                 is_open_source=True,
+                 is_kylin=True,
                  rest_api_version='v2',
                  ke_version='3.0',
                  conn_id='kylin_default',
@@ -181,7 +181,7 @@ class KylinHook(BaseHook):
                  headers=None,
                  **args
                  ):
-        self.is_open_source = is_open_source
+        self.is_kylin = is_kylin
         self.rest_api_version = rest_api_version.lower()
         self.ke_version = ke_version
         self.conn_id = conn_id
@@ -520,7 +520,7 @@ class KylinHook(BaseHook):
                         "Accept - Language": "en",
                         }
 
-    def _gen_kylin_enterprise_request_v2(self):
+    def _gen_kyligence_request_v2(self):
         if self.ke_version[0] == '4':
             if self.op_mod == "build" and (self.build_type == "BUILD" or (
                     self.build_type == "REFRESH" and self.start_time)):
@@ -542,7 +542,7 @@ class KylinHook(BaseHook):
             elif self.op_mod == "build_streaming":
                 self._gen_ke_build_streaming_v2()
 
-    def _gen_kylin_enterprise_request_v4(self):
+    def _gen_kyligence_request_v4(self):
         if self.model_mode == "SMART_MODE":
             if self.op_mod == "build" and self.build_type == "BUILD" and self.model_mode == "SMART_MODE":
                 self._gen_ke_build_segment_smart_mode_v4()
@@ -556,16 +556,16 @@ class KylinHook(BaseHook):
         if self.op_mod == "build" and self.build_type == "INDEXES":
             self._gen_ke_build_indexes_v4()
 
-    def _gen_kylin_enterprise_request(self):
+    def _gen_kyligence_request(self):
         if self.rest_api_version == "v2":
-            self._gen_kylin_enterprise_request_v2()
+            self._gen_kyligence_request_v2()
         elif self.rest_api_version == "v4":
-            self._gen_kylin_enterprise_request_v4()
+            self._gen_kyligence_request_v4()
 
     def _get_job_ids_from_response(self, rsp_json):
         job_ids = []
         rsp_datas = []
-        if self.is_open_source:
+        if self.is_kylin:
             rsp_datas = [rsp_json]
         else:
             if isinstance(rsp_json["data"], list) and len(rsp_json["data"]) > 0:
@@ -594,7 +594,7 @@ class KylinHook(BaseHook):
     def _get_jobs_status(self, job_ids):
         hook = HttpHook(method="GET", http_conn_id=self.conn_id)
         headers = {"Content-Type": "application/json;charset=utf-8"}
-        if not self.is_open_source:
+        if not self.is_kylin:
             headers.update({"Accept": "application/vnd.apache.kylin-v2+json",
                             "Accept - Language": "en"})
         job_status = []
@@ -656,10 +656,10 @@ class KylinHook(BaseHook):
                 "kylin job {job_ids} status:{job_status}".format(job_ids=job_ids, job_status=jobs_status))
 
     def run(self):
-        if self.is_open_source:
+        if self.is_kylin:
             self._gen_apache_kylin_request()
-        elif not self.is_open_source:
-            self._gen_kylin_enterprise_request()
+        elif not self.is_kylin:
+            self._gen_kyligence_request()
         self._gen_self_http_hook()
         self.log.info("method : {method}".format(method=self.method))
         self.log.info("endpoint : {endpoint}".format(endpoint=self.endpoint))

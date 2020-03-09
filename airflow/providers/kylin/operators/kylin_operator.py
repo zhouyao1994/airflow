@@ -25,7 +25,7 @@ from airflow.providers.kylin.hooks.kylin_hook import KylinHook
 class KylinOperator(BaseOperator):
     ui_color = '#B03060'
     template_fields = (
-        'is_open_source', 'rest_api_version', 'ke_version', 'conn_id', 'project', 'cube', 'op_mod', 'build_type',
+        'is_kylin', 'rest_api_version', 'ke_version', 'conn_id', 'project', 'cube', 'op_mod', 'build_type',
         'track_job_status', 'start_time', 'end_time', 'source_offset_start', 'source_offset_end',
         'force_merge_empty_segment', 'segment_name', 'job_id', 'sleep_time', 'time_out', 'sql',
         'query_result_xcom_push', 'mpvalues', 'force', 'segments', 'lookup_table', 'segment_id', 'hdfs_path',
@@ -36,7 +36,7 @@ class KylinOperator(BaseOperator):
 
     @apply_defaults
     def __init__(self,
-                 is_open_source=True,
+                 is_kylin=True,
                  rest_api_version='v2',
                  ke_version='3.0',
                  conn_id='kylin_default',
@@ -85,7 +85,7 @@ class KylinOperator(BaseOperator):
                  *args,
                  **kwargs):
         super(KylinOperator, self).__init__(*args, **kwargs)
-        self.is_open_source = is_open_source
+        self.is_kylin = is_kylin
         self.rest_api_version = rest_api_version
         self.ke_version = ke_version
         self.conn_id = conn_id
@@ -135,7 +135,7 @@ class KylinOperator(BaseOperator):
 
     def execute(self, context):
         hook = KylinHook(
-            is_open_source=self.is_open_source,
+            is_kylin=self.is_kylin,
             rest_api_version=self.rest_api_version,
             ke_version=self.ke_version,
             conn_id=self.conn_id,
