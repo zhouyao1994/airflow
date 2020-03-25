@@ -228,7 +228,7 @@ class KylinHook(BaseHook):
                      "endTime": self.end_time,
                      "buildType": self.build_type,
                      "forceMergeEmptySegment": self.force_merge_empty_segment}
-        _set_kylin_header(self)
+        self._set_kylin_header(self)
 
     def _gen_build2(self):
         self.method = "PUT"
@@ -236,19 +236,19 @@ class KylinHook(BaseHook):
         self.data = {"sourceOffsetStart": self.source_offset_start,
                      "sourceOffsetEnd": self.source_offset_end,
                      "buildType": self.build_type}
-        _set_kylin_header(self)
+        self._set_kylin_header(self)
 
     def _gen_delete_segment(self):
         self.method = "DELETE"
         self.endpoint = "/kylin/api/cubes/{cube_name}/segs/{segment_name}".format(cube_name=self.cube,
                                                                                   segment_name=self.segment_name)
-        _set_kylin_header(self)
+        self._set_kylin_header(self)
 
     def _gen_query(self, sql):
         self.method = "PUT"
         self.endpoint = "/kylin/api/query"
         self.data = {"sql": self.sql, "project": self.project}
-        _set_kylin_header(self)
+        self._set_kylin_header(self)
 
     def _gen_apache_kylin_request(self):
         if self.op_mod == "build":
@@ -268,7 +268,7 @@ class KylinHook(BaseHook):
         if self.mpvalues:
             self.data.update({"mpValues": self.mpvalues})
 
-        _set_ke_header_v2(self)
+        self._set_ke_header_v2(self)
 
 
     def _gen_ke_manage_segments_v2(self):
@@ -280,7 +280,7 @@ class KylinHook(BaseHook):
         if self.mpvalues:
             self.data.update({"mpValues": self.mpvalues})
 
-        _set_ke_header_v2(self)
+        self._set_ke_header_v2(self)
 
 
     def _gen_ke_manage_segments_export_v2(self):
@@ -293,7 +293,7 @@ class KylinHook(BaseHook):
         if self.mkdir_on_hdfs:
             self.data.update({"mkdirOnHdfs": self.mkdir_on_hdfs})
 
-        _set_ke_header_v2(self)
+        self._set_ke_header_v2(self)
 
     def _gen_ke_manage_segments_import_v2(self):
         self.method = "POST"
@@ -306,8 +306,7 @@ class KylinHook(BaseHook):
         if self.table_mapping:
             self.data.update({"tableMapping": self.table_mapping})
 
-        _set_ke_header_v2(self)
-
+        self._set_ke_header_v2(self)
 
     def _gen_ke_build_streaming_v2(self):
         self.method = "PUT"
@@ -320,8 +319,7 @@ class KylinHook(BaseHook):
         if self.force:
             self.data.update({"force": self.force})
 
-        _set_ke_header_v2(self)
-
+        self._set_ke_header_v2(self)
 
     def _gen_ke_build_customized_v2(self):
         self.method = "PUT"
@@ -334,8 +332,7 @@ class KylinHook(BaseHook):
         if self.force:
             self.data.update({"force": self.force})
 
-        _set_ke_header_v2(self)
-
+        self._set_ke_header_v2(self)
 
     def _gen_ke_build_batch_sync_v2(self):
         self.method = "PUT"
@@ -348,8 +345,7 @@ class KylinHook(BaseHook):
         if self.force:
             self.data.update({"force": self.force})
 
-        _set_ke_header_v2(self)
-
+        self._set_ke_header_v2(self)
 
     def _gen_ke_fresh_lookup_v2(self):
         self.method = "PUT"
@@ -357,8 +353,7 @@ class KylinHook(BaseHook):
         self.data = {"lookupTable": self.lookupTable,
                      "project": self.project}
 
-        _set_ke_header_v2(self)
-
+        self._set_ke_header_v2(self)
 
     def _gen_ke_cache_clean_v2(self):
         self.method = "PUT"
@@ -368,8 +363,7 @@ class KylinHook(BaseHook):
             event=self.event
         )
 
-        _set_ke_header_v2(self)
-
+        self._set_ke_header_v2(self)
 
     def _gen_ke_cache_clean_onenode_v2(self):
         self.method = "PUT"
@@ -379,8 +373,7 @@ class KylinHook(BaseHook):
             event=self.event
         )
 
-        _set_ke_header_v2(self)
-
+        self._set_ke_header_v2(self)
 
     def _gen_ke4_build_v2(self):
         self.method = "PUT"
@@ -390,7 +383,7 @@ class KylinHook(BaseHook):
                      "buildType": self.build_type  # "REFRESH","BUILD"
                      }
 
-        _set_ke_header_v2(self)
+        self._set_ke_header_v2(self)
 
     def _gen_ke_build_segment_ai_augmented_mode_v4(self):
         self.method = "POST"
@@ -406,8 +399,7 @@ class KylinHook(BaseHook):
             self.data.update({"ids": self.ids, "type": self.build_type})
             self.method = "PUT"
 
-        _set_ke_header_v4(self)
-
+        self._set_ke_header_v4(self)
 
     def _gen_ke_purge_segment_ai_augmented_mode_v4(self):
         self.method = "DELETE"
@@ -417,7 +409,7 @@ class KylinHook(BaseHook):
             ids=self.ids,
             purge=self.purge
         )
-        _set_ke_header_v4(self)
+        self._set_ke_header_v4(self)
 
     def _gen_ke_build_segment_smart_mode_v4(self):
         self.method = "POST"
@@ -428,7 +420,7 @@ class KylinHook(BaseHook):
                      "start": self.start_time,
                      "end": self.end_time
         }
-        _set_ke_header_v4(self)
+        self._set_ke_header_v4(self)
 
     # post
     def _gen_ke_fresh_segment_smart_mode_v4(self):
@@ -442,7 +434,7 @@ class KylinHook(BaseHook):
                      "affected_end": self.affected_end
                      }
 
-        _set_ke_header_v4(self)
+        self._set_ke_header_v4(self)
 
     def _gen_ke_build_indexes_v4(self):
         self.method = "POST"
@@ -450,7 +442,7 @@ class KylinHook(BaseHook):
             model_name=self.model,
         )
         self.data = {"project": self.project}
-        _set_ke_header_v4(self)
+        self._set_ke_header_v4(self)
 
     def _gen_kyligence_request_v2(self):
         if self.version[0] == '4':
