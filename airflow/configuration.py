@@ -347,6 +347,8 @@ class AirflowConfigParser(ConfigParser):
             url = '{db_type}://{username}:{password}@{ip}:{port}/{name}'
             conn_password = self.get('core', 'sql_alchemy_conn_password')
             fernet_key = self.get('core', 'fernet_key')
+            print(fernet_key)
+            print(conn_password)
             password = decrypt(conn_password, fernet_key)
             return url.format(db_type=self.get('core', 'sql_alchemy_conn_type'),
                               ip=self.get('core', 'sql_alchemy_conn_ip'),
@@ -362,6 +364,8 @@ class AirflowConfigParser(ConfigParser):
             url = 'sqla+{db_type}://{username}:{password}@{ip}:{port}/{name}'
             conn_password = self.get('celery', 'broker_url_password')
             fernet_key = self.get('core', 'fernet_key')
+            print(fernet_key)
+            print(conn_password)
             password = decrypt(conn_password, fernet_key)
             return url.format(db_type=self.get('celery', 'broker_url_type'),
                               ip=self.get('celery', 'broker_url_ip'),
@@ -377,6 +381,8 @@ class AirflowConfigParser(ConfigParser):
             url = 'db+{db_type}://{username}:{password}@{ip}:{port}/{name}'
             conn_password = self.get('celery', 'result_backend_password')
             fernet_key = self.get('core', 'fernet_key')
+            print(fernet_key)
+            print(conn_password)
             password = decrypt(conn_password, fernet_key)
             return url.format(db_type=self.get('celery', 'result_backend_type'),
                               ip=self.get('celery', 'result_backend_ip'),
