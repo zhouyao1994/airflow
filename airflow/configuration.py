@@ -42,7 +42,7 @@ from zope.deprecation import deprecated
 from airflow.exceptions import AirflowConfigException
 from airflow.utils.log.logging_mixin import LoggingMixin
 
-from Crypto.Cipher import AES
+from cryptography.fernet import Fernet
 
 standard_library.install_aliases()
 
@@ -80,18 +80,19 @@ def __unpad(text):
 
 
 def encrypt(raw, key):
-    raw = __pad(raw)
-    key = bytearray.fromhex(key)
-    cipher = AES.new(key, AES.MODE_ECB)
-    result = cipher.encrypt(raw.encode("utf-8"))
-    return result.hex()
+    text = bytes(raw, encoding='utf-8')
+    key = bytes(key, encoding='utf-8')
+    f = Fernet(key)
+    token = f.encrypt(text)
+    return token.decode()
 
 
 def decrypt(enc, key):
-    key = bytearray.fromhex(key)
-    cipher = AES.new(key, AES.MODE_ECB)
-    enc_byte_arr = bytearray.fromhex(enc)
-    return __unpad(cipher.decrypt(enc_byte_arr).decode("utf-8"))
+    token = bytes(enc, encoding='utf-8')
+    key = bytes(key, encoding='utf-8')
+    f = Fernet(key)
+    test = f.decrypt(token)
+    return bytes.decode(test)
 
 
 def expand_env_var(env_var):
