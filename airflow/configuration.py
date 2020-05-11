@@ -64,21 +64,6 @@ def generate_fernet_key():
         return Fernet.generate_key().decode()
 
 
-def __pad(text):
-    """padding text, base on multiples of 16"""
-    text_length = len(text)
-    amount_to_pad = AES.block_size - (text_length % AES.block_size)
-    if amount_to_pad == 0:
-        amount_to_pad = AES.block_size
-    pad = chr(amount_to_pad)
-    return text + pad * amount_to_pad
-
-
-def __unpad(text):
-    pad = ord(text[-1])
-    return text[:-pad]
-
-
 def encrypt(raw, key):
     text = bytes(raw, encoding='utf-8')
     key = bytes(key, encoding='utf-8')
