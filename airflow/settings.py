@@ -198,7 +198,8 @@ def configure_vars():
     global SQL_ALCHEMY_CONN
     global DAGS_FOLDER
     global PLUGINS_FOLDER
-    SQL_ALCHEMY_CONN = conf.get('core', 'SQL_ALCHEMY_CONN')
+    # SQL_ALCHEMY_CONN = conf.get('core', 'SQL_ALCHEMY_CONN')
+    SQL_ALCHEMY_CONN = conf.get_sql_alchemy_conn()
     DAGS_FOLDER = os.path.expanduser(conf.get('core', 'DAGS_FOLDER'))
 
     PLUGINS_FOLDER = conf.get(

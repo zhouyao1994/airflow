@@ -183,7 +183,8 @@ class WorkerConfiguration(LoggingMixin):
             env['AIRFLOW__CORE__DAGS_FOLDER'] = self.worker_airflow_dags
         if (not self.kube_config.airflow_configmap and
                 'AIRFLOW__CORE__SQL_ALCHEMY_CONN' not in self.kube_config.kube_secrets):
-            env['AIRFLOW__CORE__SQL_ALCHEMY_CONN'] = conf.get("core", "SQL_ALCHEMY_CONN")
+            # env['AIRFLOW__CORE__SQL_ALCHEMY_CONN'] = conf.get("core", "SQL_ALCHEMY_CONN")
+            env['AIRFLOW__CORE__SQL_ALCHEMY_CONN'] = conf.get_sql_alchemy_conn()
         if self.kube_config.git_dags_folder_mount_point:
             # /root/airflow/dags/repo/dags
             dag_volume_mount_path = os.path.join(

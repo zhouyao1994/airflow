@@ -386,9 +386,11 @@ class SchedulerJob(BaseJob):
 
         self.using_sqlite = False
         self.using_mysql = False
-        if conf.get('core', 'sql_alchemy_conn').lower().startswith('sqlite'):
+        # if conf.get('core', 'sql_alchemy_conn').lower().startswith('sqlite'):
+        if conf.get_sql_alchemy_conn().lower().startswith('sqlite'):
             self.using_sqlite = True
-        if conf.get('core', 'sql_alchemy_conn').lower().startswith('mysql'):
+        # if conf.get('core', 'sql_alchemy_conn').lower().startswith('mysql'):
+        if conf.get_sql_alchemy_conn().lower().startswith('mysql'):
             self.using_mysql = True
 
         self.max_tis_per_query = conf.getint('scheduler', 'max_tis_per_query')

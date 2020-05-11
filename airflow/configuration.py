@@ -42,6 +42,8 @@ from zope.deprecation import deprecated
 from airflow.exceptions import AirflowConfigException
 from airflow.utils.log.logging_mixin import LoggingMixin
 
+from Crypto.Cipher import AES
+
 standard_library.install_aliases()
 
 log = LoggingMixin().log
@@ -60,6 +62,36 @@ def generate_fernet_key():
         return ''
     else:
         return Fernet.generate_key().decode()
+
+
+def __pad(text):
+    """padding text, base on multiples of 16"""
+    text_length = len(text)
+    amount_to_pad = AES.block_size - (text_length % AES.block_size)
+    if amount_to_pad == 0:
+        amount_to_pad = AES.block_size
+    pad = chr(amount_to_pad)
+    return text + pad * amount_to_pad
+
+
+def __unpad(text):
+    pad = ord(text[-1])
+    return text[:-pad]
+
+
+def encrypt(raw, key):
+    raw = __pad(raw)
+    key = bytearray.fromhex(key)
+    cipher = AES.new(key, AES.MODE_ECB)
+    result = cipher.encrypt(raw.encode("utf-8"))
+    return result.hex()
+
+
+def decrypt(enc, key):
+    key = bytearray.fromhex(key)
+    cipher = AES.new(key, AES.MODE_ECB)
+    enc_byte_arr = bytearray.fromhex(enc)
+    return __unpad(cipher.decrypt(enc_byte_arr).decode("utf-8"))
 
 
 def expand_env_var(env_var):
@@ -323,6 +355,51 @@ class AirflowConfigParser(ConfigParser):
             raise AirflowConfigException(
                 "section/key [{section}/{key}] not found "
                 "in config".format(section=section, key=key))
+
+    def get_sql_alchemy_conn(self):
+        if self.getboolean('core', 'metadb_password_encrypted'):
+            url = '{db_type}://{username}:{password}@{ip}:{port}/{name}'
+            conn_password = self.get('core', 'sql_alchemy_conn_password')
+            fernet_key = self.get('core', 'fernet_key')
+            password = decrypt(conn_password, fernet_key)
+            return url.format(db_type=self.get('core', 'sql_alchemy_conn_type'),
+                              ip=self.get('core', 'sql_alchemy_conn_ip'),
+                              port=self.get('core', 'sql_alchemy_conn_port'),
+                              name=self.get('core', 'sql_alchemy_conn_name'),
+                              username=self.get('core', 'sql_alchemy_conn_username'),
+                              password=password)
+        else:
+            return self.get('core', 'sql_alchemy_con')
+
+    def get_broker_url(self):
+        if self.getboolean('celery', 'metadb_password_encrypted'):
+            url = 'sqla+{db_type}://{username}:{password}@{ip}:{port}/{name}'
+            conn_password = self.get('celery', 'broker_url_password')
+            fernet_key = self.get('core', 'fernet_key')
+            password = decrypt(conn_password, fernet_key)
+            return url.format(db_type=self.get('celery', 'broker_url_type'),
+                              ip=self.get('celery', 'broker_url_ip'),
+                              port=self.get('celery', 'broker_url_port'),
+                              name=self.get('celery', 'broker_url_name'),
+                              username=self.get('celery', 'broker_url_username'),
+                              password=password)
+        else:
+            return self.get('celery', 'broker_url')
+
+    def get_result_backend(self):
+        if self.getboolean('celery', 'metadb_password_encrypted'):
+            url = 'db+{db_type}://{username}:{password}@{ip}:{port}/{name}'
+            conn_password = self.get('celery', 'result_backend_password')
+            fernet_key = self.get('core', 'fernet_key')
+            password = decrypt(conn_password, fernet_key)
+            return url.format(db_type=self.get('celery', 'result_backend_type'),
+                              ip=self.get('celery', 'result_backend_ip'),
+                              port=self.get('celery', 'result_backend_port'),
+                              name=self.get('celery', 'result_backend_name'),
+                              username=self.get('celery', 'result_backend_username'),
+                              password=password)
+        else:
+            return self.get('celery', 'result_backend')
 
     def getboolean(self, section, key, **kwargs):
         val = str(self.get(section, key, **kwargs)).lower().strip()

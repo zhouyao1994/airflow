@@ -37,7 +37,8 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 log = LoggingMixin().log
 utc = pendulum.timezone('UTC')
 
-using_mysql = conf.get('core', 'sql_alchemy_conn').lower().startswith('mysql')
+# using_mysql = conf.get('core', 'sql_alchemy_conn').lower().startswith('mysql')
+using_mysql = conf.get_sql_alchemy_conn().lower().startswith('mysql')
 
 
 def setup_event_handlers(engine):
