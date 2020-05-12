@@ -318,7 +318,7 @@ class AirflowConfigParser(ConfigParser):
                               username=self.get('core', 'sql_alchemy_conn_username'),
                               password=password)
         else:
-            return self.get('core', 'sql_alchemy_con')
+            return self.get('core', 'sql_alchemy_conn')
 
     def get_broker_url(self):
         if self.getboolean('celery', 'metadb_password_encrypted'):
@@ -357,7 +357,7 @@ class AirflowConfigParser(ConfigParser):
         def get_encypt(self, section, key, **kwargs):
             section = str(section).lower()
             key = str(key).lower()
-            if section == 'core' and key == 'sql_alchemy_con':
+            if section == 'core' and key == 'sql_alchemy_conn':
                 return self.get_sql_alchemy_conn()
             if section == 'celery' and key == 'broker_url':
                 return self.get_broker_url()
