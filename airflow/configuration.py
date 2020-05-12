@@ -42,7 +42,9 @@ from zope.deprecation import deprecated
 from airflow.exceptions import AirflowConfigException
 from airflow.utils.log.logging_mixin import LoggingMixin
 
-from cryptography.fernet import Fernet
+# from cryptography.fernet import Fernet
+from Crypto.Cipher import AES
+
 
 standard_library.install_aliases()
 
@@ -64,20 +66,34 @@ def generate_fernet_key():
         return Fernet.generate_key().decode()
 
 
+def __pad(text):
+    """padding text, base on multiples of 16"""
+    text_length = len(bytes(text, encoding="utf-8"))
+    amount_to_pad = AES.block_size - (text_length % AES.block_size)
+    if amount_to_pad == 0:
+        amount_to_pad = AES.block_size
+    pad = chr(amount_to_pad)
+    return text + pad * amount_to_pad
+
+
+def __unpad(text):
+    pad = ord(text[-1])
+    return text[:-pad]
+
+
 def encrypt(raw, key):
-    text = bytes(raw, encoding='utf-8')
-    key = bytes(key, encoding='utf-8')
-    f = Fernet(key)
-    token = f.encrypt(text)
-    return token.decode()
+    raw = __pad(raw)
+    key = bytes.fromhex(key)
+    cipher = AES.new(key, AES.MODE_ECB)
+    result = cipher.encrypt(raw.encode("utf-8"))
+    return result.hex()
 
 
 def decrypt(enc, key):
-    token = bytes(enc, encoding='utf-8')
-    key = bytes(key, encoding='utf-8')
-    f = Fernet(key)
-    test = f.decrypt(token)
-    return bytes.decode(test)
+    key = bytes.fromhex(key)
+    cipher = AES.new(key, AES.MODE_ECB)
+    enc_byte_arr = bytes.fromhex(enc)
+    return __unpad(cipher.decrypt(enc_byte_arr).decode("utf-8"))
 
 
 def expand_env_var(env_var):
@@ -346,7 +362,7 @@ class AirflowConfigParser(ConfigParser):
         if self.getboolean('core', 'metadb_password_encrypted'):
             url = '{db_type}://{username}:{password}@{ip}:{port}/{name}'
             conn_password = self.get('core', 'sql_alchemy_conn_password')
-            fernet_key = self.get('core', 'fernet_key')
+            fernet_key = self.get('core', 'crypt_key')
             print(fernet_key)
             print(conn_password)
             password = decrypt(conn_password, fernet_key)
@@ -363,7 +379,8 @@ class AirflowConfigParser(ConfigParser):
         if self.getboolean('celery', 'metadb_password_encrypted'):
             url = 'sqla+{db_type}://{username}:{password}@{ip}:{port}/{name}'
             conn_password = self.get('celery', 'broker_url_password')
-            fernet_key = self.get('core', 'fernet_key')
+            # fernet_key = self.get('core', 'fernet_key')
+            fernet_key = self.get('celery', 'crypt_key')
             print(fernet_key)
             print(conn_password)
             password = decrypt(conn_password, fernet_key)
@@ -380,7 +397,8 @@ class AirflowConfigParser(ConfigParser):
         if self.getboolean('celery', 'metadb_password_encrypted'):
             url = 'db+{db_type}://{username}:{password}@{ip}:{port}/{name}'
             conn_password = self.get('celery', 'result_backend_password')
-            fernet_key = self.get('core', 'fernet_key')
+            # fernet_key = self.get('core', 'fernet_key')
+            fernet_key = self.get('celery', 'crypt_key')
             print(fernet_key)
             print(conn_password)
             password = decrypt(conn_password, fernet_key)
