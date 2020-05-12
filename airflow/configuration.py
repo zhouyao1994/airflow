@@ -26,6 +26,8 @@ from builtins import str
 from collections import OrderedDict
 import copy
 import errno
+from functools import wraps
+
 from future import standard_library
 import os
 import shlex
@@ -303,6 +305,68 @@ class AirflowConfigParser(ConfigParser):
                     .get(section, fallback_key)
                 return run_command(command)
 
+    def get_sql_alchemy_conn(self):
+        if self.getboolean('core', 'metadb_password_encrypted'):
+            url = '{db_type}://{username}:{password}@{ip}:{port}/{name}'
+            conn_password = self.get('core', 'sql_alchemy_conn_password')
+            fernet_key = self.get('core', 'crypt_key')
+            password = decrypt(conn_password, fernet_key)
+            return url.format(db_type=self.get('core', 'sql_alchemy_conn_type'),
+                              ip=self.get('core', 'sql_alchemy_conn_ip'),
+                              port=self.get('core', 'sql_alchemy_conn_port'),
+                              name=self.get('core', 'sql_alchemy_conn_name'),
+                              username=self.get('core', 'sql_alchemy_conn_username'),
+                              password=password)
+        else:
+            return self.get('core', 'sql_alchemy_con')
+
+    def get_broker_url(self):
+        if self.getboolean('celery', 'metadb_password_encrypted'):
+            url = 'sqla+{db_type}://{username}:{password}@{ip}:{port}/{name}'
+            conn_password = self.get('celery', 'broker_url_password')
+            # fernet_key = self.get('core', 'fernet_key')
+            fernet_key = self.get('celery', 'crypt_key')
+            password = decrypt(conn_password, fernet_key)
+            return url.format(db_type=self.get('celery', 'broker_url_type'),
+                              ip=self.get('celery', 'broker_url_ip'),
+                              port=self.get('celery', 'broker_url_port'),
+                              name=self.get('celery', 'broker_url_name'),
+                              username=self.get('celery', 'broker_url_username'),
+                              password=password)
+        else:
+            return self.get('celery', 'broker_url')
+
+    def get_result_backend(self):
+        if self.getboolean('celery', 'metadb_password_encrypted'):
+            url = 'db+{db_type}://{username}:{password}@{ip}:{port}/{name}'
+            conn_password = self.get('celery', 'result_backend_password')
+            # fernet_key = self.get('core', 'fernet_key')
+            fernet_key = self.get('celery', 'crypt_key')
+            password = decrypt(conn_password, fernet_key)
+            return url.format(db_type=self.get('celery', 'result_backend_type'),
+                              ip=self.get('celery', 'result_backend_ip'),
+                              port=self.get('celery', 'result_backend_port'),
+                              name=self.get('celery', 'result_backend_name'),
+                              username=self.get('celery', 'result_backend_username'),
+                              password=password)
+        else:
+            return self.get('celery', 'result_backend')
+
+    def get_encypt(get):
+        @wraps(get)
+        def get_encypt(self, section, key, **kwargs):
+            section = str(section).lower()
+            key = str(key).lower()
+            if section == 'core' and key == 'sql_alchemy_con':
+                return self.get_sql_alchemy_conn()
+            if section == 'celery' and key == 'broker_url':
+                return self.get_broker_url()
+            if section == 'celery' and key == 'result_backend':
+                return self.get_result_backend()
+            return get(self, section, key, **kwargs)
+        return get_encypt
+
+    @get_encypt
     def get(self, section, key, **kwargs):
         section = str(section).lower()
         key = str(key).lower()
@@ -357,59 +421,6 @@ class AirflowConfigParser(ConfigParser):
             raise AirflowConfigException(
                 "section/key [{section}/{key}] not found "
                 "in config".format(section=section, key=key))
-
-    def get_sql_alchemy_conn(self):
-        if self.getboolean('core', 'metadb_password_encrypted'):
-            url = '{db_type}://{username}:{password}@{ip}:{port}/{name}'
-            conn_password = self.get('core', 'sql_alchemy_conn_password')
-            fernet_key = self.get('core', 'crypt_key')
-            print(fernet_key)
-            print(conn_password)
-            password = decrypt(conn_password, fernet_key)
-            return url.format(db_type=self.get('core', 'sql_alchemy_conn_type'),
-                              ip=self.get('core', 'sql_alchemy_conn_ip'),
-                              port=self.get('core', 'sql_alchemy_conn_port'),
-                              name=self.get('core', 'sql_alchemy_conn_name'),
-                              username=self.get('core', 'sql_alchemy_conn_username'),
-                              password=password)
-        else:
-            return self.get('core', 'sql_alchemy_con')
-
-    def get_broker_url(self):
-        if self.getboolean('celery', 'metadb_password_encrypted'):
-            url = 'sqla+{db_type}://{username}:{password}@{ip}:{port}/{name}'
-            conn_password = self.get('celery', 'broker_url_password')
-            # fernet_key = self.get('core', 'fernet_key')
-            fernet_key = self.get('celery', 'crypt_key')
-            print(fernet_key)
-            print(conn_password)
-            password = decrypt(conn_password, fernet_key)
-            return url.format(db_type=self.get('celery', 'broker_url_type'),
-                              ip=self.get('celery', 'broker_url_ip'),
-                              port=self.get('celery', 'broker_url_port'),
-                              name=self.get('celery', 'broker_url_name'),
-                              username=self.get('celery', 'broker_url_username'),
-                              password=password)
-        else:
-            return self.get('celery', 'broker_url')
-
-    def get_result_backend(self):
-        if self.getboolean('celery', 'metadb_password_encrypted'):
-            url = 'db+{db_type}://{username}:{password}@{ip}:{port}/{name}'
-            conn_password = self.get('celery', 'result_backend_password')
-            # fernet_key = self.get('core', 'fernet_key')
-            fernet_key = self.get('celery', 'crypt_key')
-            print(fernet_key)
-            print(conn_password)
-            password = decrypt(conn_password, fernet_key)
-            return url.format(db_type=self.get('celery', 'result_backend_type'),
-                              ip=self.get('celery', 'result_backend_ip'),
-                              port=self.get('celery', 'result_backend_port'),
-                              name=self.get('celery', 'result_backend_name'),
-                              username=self.get('celery', 'result_backend_username'),
-                              password=password)
-        else:
-            return self.get('celery', 'result_backend')
 
     def getboolean(self, section, key, **kwargs):
         val = str(self.get(section, key, **kwargs)).lower().strip()
