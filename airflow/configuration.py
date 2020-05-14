@@ -98,6 +98,18 @@ def decrypt(enc, key):
     return __unpad(cipher.decrypt(enc_byte_arr).decode("utf-8"))
 
 
+def toboolean(val):
+    if '#' in val:
+        val = val.split('#')[0].strip()
+    if val in ('t', 'true', '1'):
+        return True
+    elif val in ('f', 'false', '0'):
+        return False
+    else:
+        raise ValueError(
+            'The value for configuration is not a boolean ')
+
+
 def expand_env_var(env_var):
     """
     Expands (potentially nested) env vars by repeatedly applying
@@ -305,68 +317,56 @@ class AirflowConfigParser(ConfigParser):
                     .get(section, fallback_key)
                 return run_command(command)
 
-    def get_sql_alchemy_conn(self):
-        if self.getboolean('core', 'metadb_password_encrypted'):
+    def set_sql_alchemy_conn(self):
+        if self.has_option('core', 'metadb_password_encrypted') and self.getboolean('core',
+                                                                                    'metadb_password_encrypted'):
             url = '{db_type}://{username}:{password}@{ip}:{port}/{name}'
             conn_password = self.get('core', 'sql_alchemy_conn_password')
             fernet_key = self.get('core', 'crypt_key')
             password = decrypt(conn_password, fernet_key)
-            return url.format(db_type=self.get('core', 'sql_alchemy_conn_type'),
-                              ip=self.get('core', 'sql_alchemy_conn_ip'),
-                              port=self.get('core', 'sql_alchemy_conn_port'),
-                              name=self.get('core', 'sql_alchemy_conn_name'),
-                              username=self.get('core', 'sql_alchemy_conn_username'),
-                              password=password)
-        else:
-            return self.get('core', 'sql_alchemy_conn')
+            new_url = url.format(db_type=self.get('core', 'sql_alchemy_conn_type'),
+                                 ip=self.get('core', 'sql_alchemy_conn_ip'),
+                                 port=self.get('core', 'sql_alchemy_conn_port'),
+                                 name=self.get('core', 'sql_alchemy_conn_name'),
+                                 username=self.get('core', 'sql_alchemy_conn_username'),
+                                 password=password)
+            self.set('core', 'sql_alchemy_conn', new_url)
 
-    def get_broker_url(self):
-        if self.getboolean('celery', 'metadb_password_encrypted'):
+    def set_broker_url(self):
+        if self.has_option('celery', 'metadb_password_encrypted') and self.getboolean('celery',
+                                                                                      'metadb_password_encrypted'):
             url = 'sqla+{db_type}://{username}:{password}@{ip}:{port}/{name}'
             conn_password = self.get('celery', 'broker_url_password')
-            # fernet_key = self.get('core', 'fernet_key')
             fernet_key = self.get('celery', 'crypt_key')
             password = decrypt(conn_password, fernet_key)
-            return url.format(db_type=self.get('celery', 'broker_url_type'),
-                              ip=self.get('celery', 'broker_url_ip'),
-                              port=self.get('celery', 'broker_url_port'),
-                              name=self.get('celery', 'broker_url_name'),
-                              username=self.get('celery', 'broker_url_username'),
-                              password=password)
-        else:
-            return self.get('celery', 'broker_url')
+            new_url = url.format(db_type=self.get('celery', 'broker_url_type'),
+                                 ip=self.get('celery', 'broker_url_ip'),
+                                 port=self.get('celery', 'broker_url_port'),
+                                 name=self.get('celery', 'broker_url_name'),
+                                 username=self.get('celery', 'broker_url_username'),
+                                 password=password)
+            self.set('celery', 'broker_url', new_url)
 
-    def get_result_backend(self):
-        if self.getboolean('celery', 'metadb_password_encrypted'):
+    def set_result_backend(self):
+        if self.has_option('celery', 'metadb_password_encrypted') and self.getboolean('celery',
+                                                                                      'metadb_password_encrypted'):
             url = 'db+{db_type}://{username}:{password}@{ip}:{port}/{name}'
             conn_password = self.get('celery', 'result_backend_password')
-            # fernet_key = self.get('core', 'fernet_key')
             fernet_key = self.get('celery', 'crypt_key')
             password = decrypt(conn_password, fernet_key)
-            return url.format(db_type=self.get('celery', 'result_backend_type'),
-                              ip=self.get('celery', 'result_backend_ip'),
-                              port=self.get('celery', 'result_backend_port'),
-                              name=self.get('celery', 'result_backend_name'),
-                              username=self.get('celery', 'result_backend_username'),
-                              password=password)
-        else:
-            return self.get('celery', 'result_backend')
+            new_url = url.format(db_type=self.get('celery', 'result_backend_type'),
+                                 ip=self.get('celery', 'result_backend_ip'),
+                                 port=self.get('celery', 'result_backend_port'),
+                                 name=self.get('celery', 'result_backend_name'),
+                                 username=self.get('celery', 'result_backend_username'),
+                                 password=password)
+            self.set('celery', 'result_backend', new_url)
 
-    def get_encypt(get):
-        @wraps(get)
-        def get_encypt(self, section, key, **kwargs):
-            section = str(section).lower()
-            key = str(key).lower()
-            if section == 'core' and key == 'sql_alchemy_conn':
-                return self.get_sql_alchemy_conn()
-            if section == 'celery' and key == 'broker_url':
-                return self.get_broker_url()
-            if section == 'celery' and key == 'result_backend':
-                return self.get_result_backend()
-            return get(self, section, key, **kwargs)
-        return get_encypt
+    def _set_decypt(self):
+        self.set_sql_alchemy_conn()
+        self.set_broker_url()
+        self.set_result_backend()
 
-    @get_encypt
     def get(self, section, key, **kwargs):
         section = str(section).lower()
         key = str(key).lower()
@@ -444,10 +444,12 @@ class AirflowConfigParser(ConfigParser):
     def read(self, filenames, **kwargs):
         super(AirflowConfigParser, self).read(filenames, **kwargs)
         self._validate()
+        self._set_decypt()
 
     def read_dict(self, *args, **kwargs):
         super(AirflowConfigParser, self).read_dict(*args, **kwargs)
         self._validate()
+        self._set_decypt()
 
     def has_option(self, section, option):
         try:
