@@ -172,6 +172,7 @@ class Connection(Base, LoggingMixin):
         ('tableau', 'Tableau'),
         ('kubernetes', 'Kubernetes cluster Connection'),
         ('spark', 'Spark'),
+        ('kylin', 'Kylin'),
     ]
 
     def __init__(
