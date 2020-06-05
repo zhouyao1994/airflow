@@ -32,9 +32,9 @@ class KylinHook(BaseHook):
     :type dsn: str
     """
     def __init__(self,
-                 kylin_conn_id='kylin_default',
-                 project=None,
-                 dsn=None,
+                 kylin_conn_id: Optional[str]='kylin_default',
+                 project: Optional[str]=None,
+                 dsn: Optional[str]=None,
                  *args,
                  **kwargs
                  ):
