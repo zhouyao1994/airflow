@@ -22,7 +22,6 @@ from unittest.mock import patch, MagicMock
 
 from airflow.exceptions import AirflowException
 from airflow.providers.apache.kylin.hooks.kylin import KylinHook
-from kylinpy.exceptions import KylinCubeError
 
 
 class MockCubeSource(object):

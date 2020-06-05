@@ -18,12 +18,12 @@
 
 import unittest
 from unittest.mock import patch, MagicMock
+from datetime import datetime
 
 from airflow.exceptions import AirflowException
 from airflow.models import TaskInstance
 from airflow.models.dag import DAG
 from airflow.providers.apache.kylin.operators.kylin import KylinOperator
-from datetime import datetime
 from airflow.utils import timezone
 
 DEFAULT_DATE = timezone.datetime(2020, 1, 1)
