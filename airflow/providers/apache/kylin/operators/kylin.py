@@ -130,8 +130,8 @@ class KylinOperator(BaseOperator):
 
         self.cube_command = self.hook.invoke_command
         if self.command.lower() not in self.cube_command:
-            raise AirflowException('Kylin:Command {} can not match kylin command list {}',
-                                   self.command, self.cube_command)
+            raise AirflowException('Kylin:Command {cmd} can not match kylin command list {cmds}'.format(
+                                   cmd=self.command, cmds=self.cube_command))
 
         kylinpy_params = {
             'start': datetime.fromtimestamp(int(self.start_time) / 1000) if self.start_time else None,
