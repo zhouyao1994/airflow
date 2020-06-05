@@ -15,6 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
 from typing import Optional
 from airflow.exceptions import AirflowException
 from airflow.hooks.base_hook import BaseHook
@@ -27,14 +28,14 @@ class KylinHook(BaseHook):
     :param kylin_conn_id: The connection id as configured in Airflow administration.
     :type kylin_conn_id: str
     :param project: porject name
-    :type project: str
+    :type project: Optional[str]
     :param dsn: dsn
-    :type dsn: str
+    :type dsn: Optional[str]
     """
     def __init__(self,
-                 kylin_conn_id: Optional[str]='kylin_default',
-                 project: Optional[str]=None,
-                 dsn: Optional[str]=None,
+                 kylin_conn_id: Optional[str] = 'kylin_default',
+                 project: Optional[str] = None,
+                 dsn: Optional[str] = None,
                  *args,
                  **kwargs
                  ):
