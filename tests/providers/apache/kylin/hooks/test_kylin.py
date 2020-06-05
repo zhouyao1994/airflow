@@ -20,19 +20,10 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
+from kylinpy.exceptions import KylinCubeError
+
 from airflow.exceptions import AirflowException
 from airflow.providers.apache.kylin.hooks.kylin import KylinHook
-
-
-class MockCubeSource(object):
-    def invoke_command(self, command, **kwargs):
-        invoke_command_list = ['fullbuild', 'build', 'merge', 'refresh',
-                               'delete', 'build_streaming', 'merge_streaming', 'refresh_streaming',
-                               'disable', 'enable', 'purge', 'clone', 'drop']
-        if command in invoke_command_list:
-            return {"code": "000", "data": {}}
-        else:
-            raise KylinCubeError('Unsupported invoke command for datasource: {}'.format(command))
 
 
 class TestKylinHook(unittest.TestCase):
@@ -47,8 +38,20 @@ class TestKylinHook(unittest.TestCase):
         mock_job.return_value = job
         self.assertEqual(self.hook.get_job_status('123'), "ERROR")
 
-    @patch("kylinpy.Kylin.get_datasource", return_value=MockCubeSource())
+    @patch("kylinpy.Kylin.get_datasource")
     def test_cube_run(self, cube_source):
+
+        class MockCubeSource(object):
+            def invoke_command(self, command, **kwargs):
+                invoke_command_list = ['fullbuild', 'build', 'merge', 'refresh',
+                                       'delete', 'build_streaming', 'merge_streaming', 'refresh_streaming',
+                                       'disable', 'enable', 'purge', 'clone', 'drop']
+                if command in invoke_command_list:
+                    return {"code": "000", "data": {}}
+                else:
+                    raise KylinCubeError('Unsupported invoke command for datasource: {}'.format(command))
+
+        cube_source.return_value = MockCubeSource()
         response_data = {"code": "000", "data": {}}
         self.assertDictEqual(self.hook.cube_run('kylin_sales_cube', 'build'), response_data)
         self.assertDictEqual(self.hook.cube_run('kylin_sales_cube', 'refresh'), response_data)
