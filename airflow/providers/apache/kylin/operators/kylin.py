@@ -15,7 +15,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from datetime.datetime import fromtimestamp
+
+from datetime import datetime
 from typing import Optional
 import time
 from airflow.exceptions import AirflowException
@@ -133,8 +134,8 @@ class KylinOperator(BaseOperator):
                                    self.command, self.cube_command)
 
         kylinpy_params = {
-            'start': fromtimestamp(int(self.start_time) / 1000) if self.start_time else None,
-            'end': fromtimestamp(int(self.end_time) / 1000) if self.end_time else None,
+            'start': datetime.fromtimestamp(int(self.start_time) / 1000) if self.start_time else None,
+            'end': datetime.fromtimestamp(int(self.end_time) / 1000) if self.end_time else None,
             'name': self.segment_name,
             'offset_start': int(self.offset_start) if self.offset_start else None,
             'offset_end': int(self.offset_end) if self.offset_end else None
