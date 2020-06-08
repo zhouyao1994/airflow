@@ -35,15 +35,12 @@ class KylinHook(BaseHook):
     def __init__(self,
                  kylin_conn_id: Optional[str] = 'kylin_default',
                  project: Optional[str] = None,
-                 dsn: Optional[str] = None,
-                 *args,
-                 **kwargs
+                 dsn: Optional[str] = None
                  ):
         super().__init__()
         self.kylin_conn_id = kylin_conn_id
         self.project = project
         self.dsn = dsn
-        self.invoke_command = kylinpy.CubeSource.support_invoke_command
 
     def get_conn(self):
         conn = self.get_connection(self.kylin_conn_id)

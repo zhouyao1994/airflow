@@ -19,6 +19,7 @@
 from datetime import datetime
 from typing import Optional
 import time
+from kylinpy import kylinpy
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
 from airflow.utils import timezone
@@ -128,7 +129,7 @@ class KylinOperator(BaseOperator):
                               project=self.project,
                               dsn=self.dsn)
 
-        self.cube_command = self.hook.invoke_command
+        self.cube_command = kylinpy.CubeSource.support_invoke_command
         if self.command.lower() not in self.cube_command:
             raise AirflowException('Kylin:Command {cmd} can not match kylin command list {cmds}'.format(
                                    cmd=self.command, cmds=self.cube_command))

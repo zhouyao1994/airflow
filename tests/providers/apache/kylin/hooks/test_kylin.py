@@ -41,7 +41,7 @@ class TestKylinHook(unittest.TestCase):
     @patch("kylinpy.Kylin.get_datasource")
     def test_cube_run(self, cube_source):
 
-        class MockCubeSource(object):
+        class MockCubeSource:
             def invoke_command(self, command, **kwargs):
                 invoke_command_list = ['fullbuild', 'build', 'merge', 'refresh',
                                        'delete', 'build_streaming', 'merge_streaming', 'refresh_streaming',
