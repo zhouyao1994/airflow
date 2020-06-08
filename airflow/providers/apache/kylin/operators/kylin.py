@@ -16,15 +16,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from datetime import datetime
-from typing import Optional, List, Set
 import time
+from datetime import datetime
+from typing import Optional
+
 from kylinpy import kylinpy
+
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
+from airflow.providers.apache.kylin.hooks.kylin import KylinHook
 from airflow.utils import timezone
 from airflow.utils.decorators import apply_defaults
-from airflow.providers.apache.kylin.hooks.kylin import KylinHook
 
 
 class KylinOperator(BaseOperator):
@@ -86,6 +88,7 @@ class KylinOperator(BaseOperator):
                      'merge_streaming', 'refresh_streaming'}
     jobs_end_status = {"FINISHED", "ERROR", "DISCARDED", "KILLED", "SUICIDAL", "STOPPED"}
 
+    # pylint: disable=too-many-arguments,inconsistent-return-statements
     @apply_defaults
     def __init__(self,
                  kylin_conn_id: Optional[str] = 'kylin_default',
@@ -127,8 +130,8 @@ class KylinOperator(BaseOperator):
 
         _support_invoke_command = kylinpy.CubeSource.support_invoke_command
         if self.command.lower() not in _support_invoke_command:
-            raise AirflowException('Kylin:Command {cmd} can not match kylin command list {cmds}'.format(
-                                   cmd=self.command, cmds=_support_invoke_command))
+            raise AirflowException('Kylin:Command {} can not match kylin command list {}'.format(
+                                   self.command, _support_invoke_command))
 
         kylinpy_params = {
             'start': datetime.fromtimestamp(int(self.start_time) / 1000) if self.start_time else None,
@@ -143,20 +146,19 @@ class KylinOperator(BaseOperator):
             job_id = rsp_data.get("uuid")
             if job_id is None:
                 raise AirflowException("kylin job id is None")
-            self.log.info("kylin job id: {job_id}".format(job_id=job_id))
+            self.log.info("kylin job id: %s", job_id)
 
             job_status = None
-            while not (job_status in self.jobs_end_status):
+            while job_status not in self.jobs_end_status:
                 if (timezone.utcnow() - started_at).total_seconds() > self.timeout:
-                    raise AirflowException('kylin job {job_id} timeout'.format(job_id=job_id))
+                    raise AirflowException('kylin job {} timeout'.format(job_id))
                 time.sleep(self.interval)
 
                 job_status = _hook.get_job_status(job_id)
-                self.log.info('Kylin job status is {job_status} '.format(job_status=job_status))
+                self.log.info('Kylin job status is %s ', job_status)
                 if job_status in self.jobs_error_status:
                     raise AirflowException(
-                        'Kylin job {job_id} status {job_status} is error '.format(
-                            job_id=job_id, job_status=job_status))
+                        'Kylin job {} status {} is error '.format(job_id, job_status))
 
         if self.do_xcom_push:
             return rsp_data

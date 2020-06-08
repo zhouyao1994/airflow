@@ -17,10 +17,11 @@
 # under the License.
 
 from typing import Optional
+
+from kylinpy import exceptions, kylinpy
+
 from airflow.exceptions import AirflowException
 from airflow.hooks.base_hook import BaseHook
-from kylinpy import kylinpy
-from kylinpy import exceptions
 
 
 class KylinHook(BaseHook):
@@ -53,6 +54,13 @@ class KylinHook(BaseHook):
                                  project=self.project, **conn.extra_dejson)
 
     def cube_run(self, datasource_name, op, **op_args):
+        """
+        run CubeSource command whitch in CubeSource.support_invoke_command
+        :param datasource_name:
+        :param op: command
+        :param op_args: command args
+        :return: response
+        """
         cube_source = self.get_conn().get_datasource(datasource_name)
         try:
             response = cube_source.invoke_command(op, **op_args)
@@ -61,4 +69,9 @@ class KylinHook(BaseHook):
             raise AirflowException("Cube operation {} error , Message: {}".format(op, err))
 
     def get_job_status(self, job_id):
+        """
+        get job status
+        :param job_id: kylin job id
+        :return: job status
+        """
         return self.get_conn().get_job(job_id).status

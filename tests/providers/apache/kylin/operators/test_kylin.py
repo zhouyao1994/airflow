@@ -17,8 +17,8 @@
 # under the License.
 
 import unittest
-from unittest.mock import patch, MagicMock
 from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 from airflow.exceptions import AirflowException
 from airflow.models import TaskInstance

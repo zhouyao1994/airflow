@@ -16,12 +16,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""Example DAG demonstrating the usage of the PigOperator."""
-
+"""
+This is an example DAG which uses the KylinOperator.
+The tasks below include kylin build, refresh, merge operation.
+"""
 from airflow import DAG
+from airflow.operators.python import PythonOperator
 from airflow.providers.apache.kylin.operators.kylin import KylinOperator
 from airflow.utils.dates import days_ago
-from airflow.operators.python import PythonOperator
 
 args = {
     'owner': 'airflow',
@@ -37,6 +39,11 @@ dag = DAG(
 
 
 def gen_build_time(**kwargs):
+    """
+    gen build time and push to xcom
+    :param kwargs:
+    :return:
+    """
     ti = kwargs['ti']
     ti.xcom_push(key='date_start', value='1325347200000')
     ti.xcom_push(key='date_end', value='1325433600000')
@@ -127,41 +134,3 @@ build_task3 = KylinOperator(
 
 gen_build_time_task >> build_task1 >> build_task2 >> refresh_task1 >> merge_task
 merge_task >> disable_task >> purge_task >> build_task3
-
-streaming_build_task1 = KylinOperator(
-    task_id="kylin_build_streaming_1",
-    kylin_conn_id='kylin_default',
-    project='learn_kylin',
-    cube='kylin_streaming_cube',
-    command='build_streaming',
-    offset_start='0',
-    offset_end='9223372036854775807',
-    is_track_job=True,
-    dag=dag,
-)
-
-streaming_build_task2 = KylinOperator(
-    task_id="kylin_build_streaming_2",
-    kylin_conn_id='kylin_default',
-    project='learn_kylin',
-    cube='kylin_streaming_cube',
-    command='build_streaming',
-    offset_start='0',
-    offset_end='9223372036854775807',
-    is_track_job=True,
-    dag=dag,
-)
-
-streaming_merge_task = KylinOperator(
-    task_id="kylin_merge_streaming",
-    kylin_conn_id='kylin_default',
-    project='learn_kylin',
-    cube='kylin_streaming_cube',
-    command='merge_streaming',
-    offset_start='0',
-    offset_end='9223372036854775807',
-    is_track_job=True,
-    dag=dag,
-)
-
-streaming_build_task1 >> streaming_build_task2 >> streaming_merge_task
