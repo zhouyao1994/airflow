@@ -590,6 +590,7 @@ EXTRAS_REQUIREMENTS: Dict[str, Iterable[str]] = {
     'hashicorp': hashicorp,
     'hdfs': hdfs,  # TODO: remove this in Airflow 2.1
     'hive': hive,  # TODO: remove this in Airflow 2.1
+    'kylin': kylin,
     'jdbc': jdbc,
     'jira': jira,
     'kerberos': kerberos,
