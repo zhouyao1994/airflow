@@ -558,7 +558,7 @@ EXTRAS_REQUIREMENTS: Dict[str, Iterable[str]] = {
     "apache.druid": druid,
     "apache.hdfs": hdfs,
     "apache.hive": hive,
-    'apache.kylin': kylin,
+    "apache.kylin": kylin,
     "apache.pinot": pinot,
     "apache.webhdfs": webhdfs,
     'async': async_packages,
@@ -590,11 +590,11 @@ EXTRAS_REQUIREMENTS: Dict[str, Iterable[str]] = {
     'hashicorp': hashicorp,
     'hdfs': hdfs,  # TODO: remove this in Airflow 2.1
     'hive': hive,  # TODO: remove this in Airflow 2.1
-    'kylin': kylin,
     'jdbc': jdbc,
     'jira': jira,
     'kerberos': kerberos,
     'kubernetes': kubernetes,   # TODO: remove this in Airflow 2.1
+    'kylin': kylin,
     'ldap': ldap,
     "microsoft.azure": azure,
     "microsoft.mssql": mssql,
