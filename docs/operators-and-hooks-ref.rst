@@ -152,6 +152,7 @@ Foundation.
      -
      - :mod:`airflow.providers.apache.kylin.hooks.kylin`
      - :mod:`airflow.providers.apache.kylin.operators.kylin`
+     -
 
    * - `Apache Livy <https://livy.apache.org/>`__
      -
